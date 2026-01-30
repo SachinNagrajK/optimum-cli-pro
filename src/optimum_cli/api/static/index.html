@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimum CLI Pro - Model Management Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-rocket"></i>
+                <h1>Optimum CLI Pro</h1>
+            </div>
+            <div class="server-status" id="serverStatus">
+                <i class="fas fa-circle"></i>
+                <span>Checking...</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="models">
+                <i class="fas fa-cubes"></i> Models
+            </button>
+            <button class="tab-btn" data-tab="inference">
+                <i class="fas fa-brain"></i> Inference
+            </button>
+            <button class="tab-btn" data-tab="ab-testing">
+                <i class="fas fa-flask"></i> A/B Testing
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Models Tab -->
+            <section class="tab-content active" id="models-tab">
+                <div class="section-header">
+                    <h2><i class="fas fa-cubes"></i> Model Registry</h2>
+                    <button class="btn btn-primary" onclick="loadModels()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div class="models-grid" id="modelsGrid">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading models...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inference Tab -->
+            <section class="tab-content" id="inference-tab">
+                <div class="section-header">
+                    <h2><i class="fas fa-brain"></i> Model Inference</h2>
+                </div>
+                
+                <div class="inference-panel">
+                    <div class="form-group">
+                        <label for="modelSelect">
+                            <i class="fas fa-box"></i> Select Model
+                        </label>
+                        <select id="modelSelect" class="form-control">
+                            <option value="">Loading models...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inputText">
+                            <i class="fas fa-keyboard"></i> Input Text (use [MASK] for prediction)
+                        </label>
+                        <textarea id="inputText" class="form-control" rows="3" 
+                            placeholder="Enter your text here... Use [MASK] where you want the model to predict. Example: The capital of France is [MASK].">The capital of France is [MASK].</textarea>
+                    </div>
+
+                    <button class="btn btn-success btn-large" onclick="runInference()">
+                        <i class="fas fa-play"></i> Run Inference
+                    </button>
+
+                    <div id="inferenceResults" class="results-panel"></div>
+                </div>
+            </section>
+
+            <!-- A/B Testing Tab -->
+            <section class="tab-content" id="ab-testing-tab">
+                <div class="section-header">
+                    <h2><i class="fas fa-flask"></i> A/B Testing</h2>
+                </div>
+
+                <div class="ab-testing-panel">
+                    <div class="comparison-setup">
+                        <h3>Compare Two Models</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-box"></i> Model A</label>
+                                <select id="modelA" class="form-control">
+                                    <option value="">Select Model A</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-box"></i> Model B</label>
+                                <select id="modelB" class="form-control">
+                                    <option value="">Select Model B</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-keyboard"></i> Test Input</label>
+                            <input type="text" id="testInput" class="form-control" 
+                                placeholder="Enter test text with [MASK]" 
+                                value="The capital of France is [MASK].">
+                        </div>
+
+                        <button class="btn btn-warning btn-large" onclick="compareModels()">
+                            <i class="fas fa-chart-line"></i> Compare Models
+                        </button>
+                    </div>
+
+                    <div id="comparisonResults" class="comparison-results"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Optimum CLI Pro v1.0.0 | Production-Grade Model Optimization Platform</p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

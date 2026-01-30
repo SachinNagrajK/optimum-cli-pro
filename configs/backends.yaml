@@ -1,0 +1,108 @@
+# Backend-specific configurations
+
+bettertransformer:
+  name: "BetterTransformer"
+  description: "PyTorch BetterTransformer optimization"
+  requirements:
+    - torch>=1.12.0
+    - optimum>=1.5.0
+  
+  supported_models:
+    - bert
+    - roberta
+    - distilbert
+    - vit
+    - albert
+    - bart
+    - mbart
+    - electra
+  
+  settings:
+    validate_model: true
+    keep_original_model: true
+
+onnx:
+  name: "ONNX Runtime"
+  description: "ONNX Runtime with optimization and quantization"
+  requirements:
+    - onnx>=1.15.0
+    - onnxruntime>=1.16.0
+    - optimum>=1.16.0
+  
+  supported_models:
+    - all  # Supports most HuggingFace models
+  
+  settings:
+    opset_version: 14
+    optimization_level: 99  # 1, 2, or 99 (all optimizations)
+    
+    quantization:
+      enabled: true
+      mode: "dynamic"  # dynamic or static
+      per_channel: true
+      reduce_range: false
+      operators_to_quantize:
+        - MatMul
+        - Attention
+        - Add
+        - Mul
+    
+    graph_optimization:
+      enabled: true
+      optimization_level: "all"  # basic, extended, all
+    
+    providers:
+      - CPUExecutionProvider
+
+openvino:
+  name: "OpenVINO"
+  description: "Intel OpenVINO optimization"
+  requirements:
+    - optimum[openvino,nncf]>=1.16.0
+    - openvino>=2023.0.0
+  
+  supported_models:
+    - all
+  
+  settings:
+    device: "CPU"  # CPU, GPU, AUTO
+    precision: "FP16"  # FP32, FP16, INT8
+    
+    quantization:
+      enabled: true
+      preset: "mixed"  # performance, mixed, accuracy
+      ignored_scope: null
+    
+    optimization:
+      pot_enabled: true  # Post-training Optimization Toolkit
+      nncf_enabled: true  # Neural Network Compression Framework
+    
+    inference:
+      num_streams: 1
+      num_threads: null  # auto-detect
+      enable_cpu_pinning: false
+
+# Backend priority by hardware
+hardware_priority:
+  cpu:
+    intel:
+      - openvino
+      - onnx
+      - bettertransformer
+    amd:
+      - onnx
+      - bettertransformer
+    other:
+      - onnx
+      - bettertransformer
+  
+  gpu:
+    nvidia:
+      - bettertransformer
+      - onnx
+    amd:
+      - onnx
+      - bettertransformer
+    intel:
+      - openvino
+      - onnx

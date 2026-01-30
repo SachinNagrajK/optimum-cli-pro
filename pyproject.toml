@@ -1,0 +1,107 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "optimum-cli-pro"
+version = "1.0.0"
+description = "Production-grade CLI tool for optimizing HuggingFace models with multiple backends"
+authors = [
+    {name = "Optimum CLI Pro", email = "optimum@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Apache-2.0"}
+keywords = ["machine-learning", "optimization", "huggingface", "onnx", "openvino"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+dependencies = [
+    "typer[all]>=0.9.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "PyYAML>=6.0",
+    "loguru>=0.7.0",
+    "rich>=13.7.0",
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "transformers>=4.36.0",
+    "torch>=2.1.0",
+    "optimum>=1.16.0",
+    "onnx>=1.15.0",
+    "onnxruntime>=1.16.0",
+    "datasets>=2.16.0",
+    "evaluate>=0.4.1",
+    "psutil>=5.9.0",
+    "aiosqlite>=0.19.0",
+    "httpx>=0.26.0",
+    "plotly>=5.18.0",
+    "pandas>=2.1.0",
+]
+
+[project.optional-dependencies]
+openvino = [
+    "optimum[openvino,nncf]>=1.16.0",
+]
+mlops = [
+    "mlflow>=2.9.0",
+    "wandb>=0.16.0",
+]
+aws = [
+    "boto3>=1.34.0",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=24.1.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+]
+all = [
+    "optimum-cli-pro[openvino,mlops,aws,dev]",
+]
+
+[project.scripts]
+optimum-pro = "optimum_cli.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/optimum-cli-pro"
+Documentation = "https://github.com/yourusername/optimum-cli-pro/docs"
+Repository = "https://github.com/yourusername/optimum-cli-pro"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39', 'py310', 'py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=optimum_cli --cov-report=html --cov-report=term"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*", "**/__pycache__/*"]
