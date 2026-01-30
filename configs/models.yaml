@@ -1,0 +1,70 @@
+# Common model presets for quick optimization
+
+presets:
+  bert-base:
+    model_id: "bert-base-uncased"
+    task: "fill-mask"
+    batch_size: 1
+    sequence_length: 128
+    recommended_backend: "onnx"
+  
+  bert-large:
+    model_id: "bert-large-uncased"
+    task: "fill-mask"
+    batch_size: 1
+    sequence_length: 128
+    recommended_backend: "openvino"
+  
+  distilbert:
+    model_id: "distilbert-base-uncased"
+    task: "fill-mask"
+    batch_size: 1
+    sequence_length: 128
+    recommended_backend: "bettertransformer"
+  
+  roberta:
+    model_id: "roberta-base"
+    task: "fill-mask"
+    batch_size: 1
+    sequence_length: 128
+    recommended_backend: "onnx"
+  
+  vit:
+    model_id: "google/vit-base-patch16-224"
+    task: "image-classification"
+    batch_size: 1
+    recommended_backend: "onnx"
+  
+  gpt2:
+    model_id: "gpt2"
+    task: "text-generation"
+    batch_size: 1
+    sequence_length: 128
+    recommended_backend: "bettertransformer"
+
+# Task-specific configurations
+tasks:
+  text-classification:
+    default_dataset: "glue"
+    default_subset: "sst2"
+    metric: "accuracy"
+  
+  token-classification:
+    default_dataset: "conll2003"
+    metric: "f1"
+  
+  question-answering:
+    default_dataset: "squad"
+    metric: "f1"
+  
+  text-generation:
+    default_dataset: null
+    metric: "perplexity"
+  
+  image-classification:
+    default_dataset: "imagenet-1k"
+    metric: "accuracy"
+  
+  fill-mask:
+    default_dataset: null
+    metric: "accuracy"

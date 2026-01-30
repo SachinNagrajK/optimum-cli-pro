@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Optimum CLI Pro - AWS CloudFormation Template for EC2 t2.micro (Free Tier)'
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair for SSH access
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair
+
+  SSHLocation:
+    Description: IP address range that can SSH to the EC2 instance
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range (x.x.x.x/x)
+
+Resources:
+  # Security Group
+  OptimumCLISecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Optimum CLI Pro
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SSHLocation
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+
+  # EC2 Instance
+  OptimumCLIInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0c55b159cbfafe1f0  # Ubuntu 20.04 LTS (update for your region)
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref OptimumCLISecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -e
+          
+          # Update system
+          apt-get update
+          apt-get upgrade -y
+          
+          # Install Docker
+          apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+          add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+          apt-get update
+          apt-get install -y docker-ce docker-ce-cli containerd.io
+          
+          # Install Docker Compose
+          curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          
+          # Clone repository (replace with your repo)
+          cd /home/ubuntu
+          git clone https://github.com/yourusername/optimum-cli-pro.git
+          cd optimum-cli-pro
+          
+          # Create .env file
+          cp .env.example .env
+          
+          # Build and start with Docker Compose
+          docker-compose up -d
+          
+          # Enable auto-start
+          systemctl enable docker
+          
+          echo "Optimum CLI Pro deployed successfully!"
+      Tags:
+        - Key: Name
+          Value: OptimumCLIPro
+
+Outputs:
+  InstanceId:
+    Description: Instance ID of the EC2 instance
+    Value: !Ref OptimumCLIInstance
+  
+  PublicIP:
+    Description: Public IP address of the EC2 instance
+    Value: !GetAtt OptimumCLIInstance.PublicIp
+  
+  PublicDNS:
+    Description: Public DNS name of the EC2 instance
+    Value: !GetAtt OptimumCLIInstance.PublicDnsName
+  
+  APIURL:
+    Description: API endpoint URL
+    Value: !Sub 'http://${OptimumCLIInstance.PublicIp}:8000'
+  
+  DocsURL:
+    Description: API documentation URL
+    Value: !Sub 'http://${OptimumCLIInstance.PublicIp}:8000/docs'

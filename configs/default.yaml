@@ -1,0 +1,109 @@
+# Default application configuration
+app:
+  name: "optimum-cli-pro"
+  version: "1.0.0"
+  debug: false
+
+# Server configuration
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
+  reload: false
+
+# Optimization defaults
+optimization:
+  default_backend: "auto"  # auto, onnx, openvino, bettertransformer
+  batch_size: 1
+  sequence_length: 128
+  
+  quantization:
+    enabled: true
+    mode: "dynamic"  # dynamic, static
+    bits: 8
+  
+  optimization_level: 2  # 0=None, 1=Basic, 2=Extended, 99=All
+
+# Benchmarking configuration
+benchmarking:
+  warmup_runs: 5
+  test_runs: 50
+  batch_sizes: [1, 4, 8, 16]
+  sequence_lengths: [32, 64, 128, 256]
+  
+  metrics:
+    - latency_p50
+    - latency_p95
+    - latency_p99
+    - throughput
+    - memory_usage
+    - accuracy
+
+# Storage configuration
+storage:
+  type: "local"  # local, s3
+  local:
+    base_path: "./data/models"
+  s3:
+    bucket: ""
+    region: "us-east-1"
+    prefix: "models/"
+
+# Database configuration
+database:
+  type: "sqlite"
+  path: "./data/registry.db"
+  echo: false
+
+# Logging configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+  file:
+    enabled: true
+    path: "./data/logs/app.log"
+    rotation: "100 MB"
+    retention: "30 days"
+  console:
+    enabled: true
+
+# MLOps integration
+mlops:
+  mlflow:
+    enabled: false
+    tracking_uri: "./mlruns"
+    experiment_name: "model-optimization"
+    artifact_location: null
+  
+  wandb:
+    enabled: false
+    project: "optimum-cli-pro"
+    entity: ""
+    tags:
+      - optimization
+      - production
+
+# Cost tracking
+cost_tracking:
+  enabled: true
+  aws:
+    ec2_t2_micro_hourly: 0.0116
+    s3_storage_per_gb: 0.023
+    data_transfer_per_gb: 0.09
+  thresholds:
+    warning: 10.0  # USD
+    critical: 50.0  # USD
+
+# Hardware detection
+hardware:
+  auto_detect: true
+  prefer_gpu: true
+  cpu_threads: null  # null = auto-detect
+
+# A/B testing
+abtest:
+  default_dataset: "glue"
+  default_subset: "sst2"
+  default_split: "validation"
+  sample_size: 1000
+  significance_level: 0.05
