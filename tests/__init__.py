@@ -1,6 +1,5 @@
 """Basic test file."""
 
-import pytest
 from optimum_cli import __version__
 
 

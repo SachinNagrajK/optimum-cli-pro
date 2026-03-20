@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="optimum-cli-pro",
-    version="1.0.0",
+    version="1.0.1",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     install_requires=[
@@ -19,7 +19,7 @@ setup(
         "PyYAML>=6.0",
         "loguru>=0.7.0",
         "rich>=13.7.0",
-        "fastapi>=0.109.0",
+        "fastapi>=0.109.0,<1.0.0",
         "uvicorn[standard]>=0.27.0",
         "transformers>=4.36.0",
         "torch>=2.1.0",
@@ -36,7 +36,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "optimum-cli=optimum_cli.__main__:main",
+            "optimum-pro=optimum_cli.__main__:main",
         ],
     },
     python_requires=">=3.9",

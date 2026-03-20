@@ -135,20 +135,20 @@ optimum-cli optimize list
 - `--track-mlflow`: Track with MLflow
 - `--track-wandb`: Track with Weights & Biases
 
-### Benchmark Commands (Coming Soon)
+### Benchmark Commands
 
 ```powershell
 optimum-cli benchmark model <model-id> [OPTIONS]
-optimum-cli benchmark compare <model-a> <model-b>
+optimum-cli benchmark compare <optimized-model> [<baseline-model>]
 ```
 
-### Registry Commands (Coming Soon)
+### Registry Commands
 
 ```powershell
 optimum-cli registry list
 optimum-cli registry push <name> <path>
-optimum-cli registry pull <name>
-optimum-cli registry delete <name>
+optimum-cli registry pull <name> [--version <version>] [--output <dir>]
+optimum-cli registry delete <name> [--version <version>] [--yes]
 ```
 
 ### Server Commands
@@ -328,9 +328,8 @@ pytest tests/unit/test_backends.py
 ## 📚 Documentation
 
 - [Quick Start](docs/quickstart.md)
-- [CLI Guide](docs/cli-guide.md) (coming soon)
-- [API Guide](docs/api-guide.md) (coming soon)
-- [AWS Deployment](docs/aws-deployment.md) (coming soon)
+- [Quick Deployment](DEPLOYMENT.md)
+- [AWS Deployment](deployment/aws/README.md)
 
 ## 🐛 Troubleshooting
 
@@ -366,8 +365,8 @@ optimum-cli optimize model bert-large --backend onnx --batch-size 1
 1. ✅ **Start optimizing** your models
 2. 📊 **Explore different backends** to find the best performance
 3. 🚀 **Deploy to AWS** for production use
-4. 📈 **Track experiments** with MLflow/WandB (coming soon)
-5. 🔄 **Benchmark** and compare backends (coming soon)
+4. 📈 **Track experiments** with local logs and optional MLflow/WandB
+5. 🔄 **Benchmark** and compare optimized models against baselines
 
 ## 💡 Tips
 

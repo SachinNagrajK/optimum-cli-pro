@@ -1,6 +1,5 @@
 """Main model optimizer class."""
 
-from pathlib import Path
 from typing import Any, Dict, Optional
 import time
 
@@ -9,6 +8,7 @@ from optimum_cli.core.backend_manager import get_backend_manager
 from optimum_cli.core.config import get_settings
 from optimum_cli.utils.logger import log
 from optimum_cli.utils.exceptions import OptimizationError
+from optimum_cli.utils.tracking import track_optimization_event
 from optimum_cli.utils.validators import (
     validate_model_id,
     validate_backend,
@@ -53,6 +53,11 @@ class ModelOptimizer:
             Dictionary with optimization results
         """
         start_time = time.time()
+
+        track_mlflow = kwargs.pop("track_mlflow", None)
+        track_wandb = kwargs.pop("track_wandb", None)
+        tracking_source = kwargs.pop("tracking_source", "optimizer")
+        device = kwargs.pop("device", "auto")
         
         try:
             # Validate inputs
@@ -82,6 +87,19 @@ class ModelOptimizer:
             else:
                 backend_instance = self.backend_manager.get_backend(backend)
                 backend_name = backend
+
+            requested_device = str(device).lower().strip()
+            if requested_device in {"auto", "gpu"} and backend_name == "bettertransformer":
+                try:
+                    import torch
+
+                    if torch.cuda.is_available():
+                        model = model.to("cuda")
+                    elif requested_device == "gpu":
+                        raise OptimizationError("GPU requested but CUDA is not available")
+                except ImportError:
+                    if requested_device == "gpu":
+                        raise OptimizationError("GPU requested but torch is not available")
             
             # Check if model is supported
             if not backend_instance.is_supported(config):
@@ -99,6 +117,7 @@ class ModelOptimizer:
                 "task": task,
                 "batch_size": batch_size or self.settings.optimization.batch_size,
                 "sequence_length": sequence_length or self.settings.optimization.sequence_length,
+                "device": requested_device,
                 **kwargs
             }
             
@@ -126,6 +145,19 @@ class ModelOptimizer:
                 "optimization_time_seconds": round(elapsed_time, 2),
                 "config": config,
             }
+
+            tracking = track_optimization_event(
+                model_id=model_id,
+                requested_backend=backend,
+                quantization=quantization,
+                requested_task=task,
+                success=True,
+                result=result,
+                track_mlflow=track_mlflow,
+                track_wandb=track_wandb,
+                source=tracking_source,
+            )
+            result["tracking"] = tracking
             
             log.success(
                 f"✨ Optimization complete in {elapsed_time:.2f}s\n"
@@ -136,6 +168,20 @@ class ModelOptimizer:
             
         except Exception as e:
             log.error(f"Optimization failed: {e}")
+            try:
+                track_optimization_event(
+                    model_id=model_id,
+                    requested_backend=backend,
+                    quantization=quantization,
+                    requested_task=task,
+                    success=False,
+                    error=str(e),
+                    track_mlflow=track_mlflow,
+                    track_wandb=track_wandb,
+                    source=tracking_source,
+                )
+            except Exception as tracking_error:
+                log.warning(f"Tracking failed after optimization error: {tracking_error}")
             raise OptimizationError(f"Model optimization failed: {e}")
     
     def get_model_info(self, model_id: str) -> Dict[str, Any]:

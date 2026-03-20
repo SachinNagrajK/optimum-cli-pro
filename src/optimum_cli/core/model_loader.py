@@ -1,6 +1,5 @@
 """Model loading utilities for HuggingFace models."""
 
-from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 from transformers import AutoConfig, AutoModel, AutoTokenizer, AutoFeatureExtractor

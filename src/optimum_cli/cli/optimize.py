@@ -41,6 +41,11 @@ def optimize_model(
         "--sequence-length",
         help="Sequence length for optimization"
     ),
+    device: str = typer.Option(
+        "auto",
+        "--device",
+        help="Execution device: auto, cpu, gpu"
+    ),
     quantization: bool = typer.Option(
         True,
         "--quantization/--no-quantization",
@@ -87,6 +92,10 @@ def optimize_model(
                 batch_size=batch_size,
                 sequence_length=sequence_length,
                 quantization=quantization,
+                device=device,
+                track_mlflow=track_mlflow,
+                track_wandb=track_wandb,
+                tracking_source="cli",
             )
             
             progress.update(task_id, completed=True)
@@ -98,13 +107,14 @@ def optimize_model(
         console.print(f"[bold]Task:[/bold] {result['task']}")
         console.print(f"[bold]Output Path:[/bold] {result['output_path']}")
         console.print(f"[bold]Time:[/bold] {result['optimization_time_seconds']}s\n")
-        
-        # Track with MLOps if requested
-        if track_mlflow:
-            console.print("[yellow]MLflow tracking not yet implemented[/yellow]")
-        
-        if track_wandb:
-            console.print("[yellow]Weights & Biases tracking not yet implemented[/yellow]")
+
+        tracking_info = result.get("tracking", {})
+        if tracking_info:
+            console.print(f"[dim]Local tracking: {tracking_info.get('local_log_path', 'N/A')}[/dim]")
+            if track_mlflow or tracking_info.get("mlflow_status") not in (None, "skipped"):
+                console.print(f"[dim]MLflow: {tracking_info.get('mlflow_status', 'skipped')}[/dim]")
+            if track_wandb or tracking_info.get("wandb_status") not in (None, "skipped"):
+                console.print(f"[dim]W&B: {tracking_info.get('wandb_status', 'skipped')}[/dim]")
         
         console.print("[green]✓[/green] Done!\n")
         

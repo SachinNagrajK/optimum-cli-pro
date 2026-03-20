@@ -21,7 +21,7 @@ def start(
         optimum-cli serve start
         optimum-cli serve start --port 8080 --reload
     """
-    console.print(f"\n[bold cyan]🚀 Starting API server[/bold cyan]\n")
+    console.print("\n[bold cyan]🚀 Starting API server[/bold cyan]\n")
     console.print(f"Host: {host}")
     console.print(f"Port: {port}")
     console.print(f"Workers: {workers}")
@@ -29,7 +29,6 @@ def start(
     
     try:
         import uvicorn
-        from optimum_cli.api.main import app
         
         console.print("[green]Server starting...[/green]")
         console.print(f"[dim]API docs available at: http://{host}:{port}/docs[/dim]\n")

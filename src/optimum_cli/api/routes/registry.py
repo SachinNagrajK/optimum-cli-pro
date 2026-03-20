@@ -1,10 +1,12 @@
 """Registry API routes."""
 
 from typing import List, Optional
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
+from optimum_cli.core.benchmarking import load_runtime_model, masked_token_predictions
 from optimum_cli.core.registry import ModelRegistry
 
 router = APIRouter()
@@ -66,9 +68,6 @@ async def get_registry_model(name: str, version: str = "latest"):
 async def predict(name: str, request: InferenceRequest, version: str = "latest"):
     """Run inference with a registered model."""
     import time
-    from optimum.intel import OVModelForMaskedLM
-    from optimum.onnxruntime import ORTModelForMaskedLM
-    from transformers import AutoTokenizer
 
     # Get model from registry
     registry = ModelRegistry()
@@ -81,44 +80,21 @@ async def predict(name: str, request: InferenceRequest, version: str = "latest")
         )
 
     try:
-        # Load tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_info["base_model"] or "bert-base-uncased"
+        tokenizer, model = load_runtime_model(
+            Path(model_info["model_path"]),
+            model_info["backend"],
+            base_model=model_info.get("base_model"),
+            device="auto",
         )
-
-        # Load model based on backend
-        if model_info["backend"] == "onnx":
-            model = ORTModelForMaskedLM.from_pretrained(model_info["model_path"])
-        elif model_info["backend"] == "openvino":
-            model = OVModelForMaskedLM.from_pretrained(model_info["model_path"])
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported backend: {model_info['backend']}",
-            )
 
         # Run inference
         inputs = tokenizer(request.input_text, return_tensors="pt")
 
         start_time = time.perf_counter()
-        outputs = model(**inputs)
+        _ = model(**inputs)
         inference_time = time.perf_counter() - start_time
 
-        # Get predictions
-        logits = outputs.logits
-        mask_token_index = (inputs["input_ids"] == tokenizer.mask_token_id)[0].nonzero(
-            as_tuple=True
-        )[0]
-        
-        if len(mask_token_index) > 0:
-            mask_token_logits = logits[0, mask_token_index, :]
-            top_tokens = mask_token_logits.topk(5, dim=-1).indices[0].tolist()
-            predictions = [
-                {"token": tokenizer.decode([token]), "score": float(mask_token_logits[0, i])}
-                for i, token in enumerate(top_tokens)
-            ]
-        else:
-            predictions = []
+        predictions = masked_token_predictions(model, tokenizer, request.input_text, top_k=5)
 
         return InferenceResponse(
             model_name=model_info["name"],

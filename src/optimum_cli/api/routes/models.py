@@ -2,7 +2,6 @@
 
 from fastapi import APIRouter, HTTPException
 from pathlib import Path
-from typing import List
 
 from optimum_cli.api.schemas import ModelInfo
 from optimum_cli.core.optimizer import get_optimizer

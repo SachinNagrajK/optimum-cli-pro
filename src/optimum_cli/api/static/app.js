@@ -36,6 +36,8 @@ function initializeTabs() {
                 populateModelSelect();
             } else if (targetTab === 'ab-testing') {
                 populateABSelects();
+            } else if (targetTab === 'tracking') {
+                loadTrackingRuns();
             }
         });
     });
@@ -402,4 +404,79 @@ function displayComparisonResults(resultA, resultB) {
             <p>${winner} is ${speedup}x faster!</p>
         </div>
     `;
+}
+
+// Load Tracking Runs
+async function loadTrackingRuns() {
+    const panel = document.getElementById('trackingPanel');
+    if (!panel) {
+        return;
+    }
+
+    panel.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i><p>Loading tracking history...</p></div>';
+
+    try {
+        const response = await fetch(`${API_BASE}/tracking/runs?limit=50`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch tracking runs');
+        }
+
+        const runs = await response.json();
+
+        if (!Array.isArray(runs) || runs.length === 0) {
+            panel.innerHTML = '<div class="loading"><i class="fas fa-clock"></i><p>No tracking runs found yet.</p></div>';
+            return;
+        }
+
+        const rows = runs.map(run => {
+            const statusClass = run.success ? 'status-success' : 'status-failed';
+            const statusText = run.success ? 'Success' : 'Failed';
+            const timestamp = run.timestamp ? new Date(run.timestamp).toLocaleString() : '-';
+            const backend = run.resolved_backend || run.requested_backend || '-';
+            const duration = run.optimization_time_seconds != null ? `${run.optimization_time_seconds}s` : '-';
+            const errorText = run.error || '-';
+
+            return `
+                <tr>
+                    <td>${timestamp}</td>
+                    <td>${run.model_id || '-'}</td>
+                    <td><span class="tracking-status ${statusClass}">${statusText}</span></td>
+                    <td>${backend}</td>
+                    <td>${duration}</td>
+                    <td>${run.mlflow_status || '-'}</td>
+                    <td>${run.wandb_status || '-'}</td>
+                    <td title="${errorText}">${errorText}</td>
+                </tr>
+            `;
+        }).join('');
+
+        panel.innerHTML = `
+            <div class="tracking-table-wrapper">
+                <table class="tracking-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Model</th>
+                            <th>Status</th>
+                            <th>Backend</th>
+                            <th>Duration</th>
+                            <th>MLflow</th>
+                            <th>W&amp;B</th>
+                            <th>Error</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (error) {
+        panel.innerHTML = `
+            <div class="loading">
+                <i class="fas fa-exclamation-circle" style="color: var(--danger);"></i>
+                <p>Error loading tracking runs: ${error.message}</p>
+            </div>
+        `;
+    }
 }

@@ -79,10 +79,10 @@ optimum-cli list-backends
 # List optimized models
 optimum-cli optimize list
 
-# Benchmark a model (coming soon)
+# Benchmark a model
 optimum-cli benchmark model bert-base-uncased --backends all
 
-# Model registry (coming soon)
+# Model registry
 optimum-cli registry list
 optimum-cli registry push my-model ./optimized_models/bert_onnx
 optimum-cli registry pull my-model
