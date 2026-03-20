@@ -9,6 +9,7 @@ from optimum_cli.cli.optimize import optimize_app
 from optimum_cli.cli.benchmark import benchmark_app
 from optimum_cli.cli.registry import registry_app
 from optimum_cli.cli.serve import serve_app
+from optimum_cli.cli.tracking import tracking_app
 
 # Create main app
 app = typer.Typer(
@@ -26,6 +27,7 @@ app.add_typer(optimize_app, name="optimize", help="Optimize models")
 app.add_typer(benchmark_app, name="benchmark", help="Benchmark models")
 app.add_typer(registry_app, name="registry", help="Manage model registry")
 app.add_typer(serve_app, name="serve", help="Start API server")
+app.add_typer(tracking_app, name="tracking", help="View optimization tracking history")
 
 
 @app.command()
@@ -91,7 +93,7 @@ def info():
     console.print(backends_table)
     
     # Recommended backend with availability check
-    console.print(f"\n[bold cyan]💡 Recommendations[/bold cyan]\n")
+    console.print("\n[bold cyan]💡 Recommendations[/bold cyan]\n")
     
     # Get ideal backend based on hardware
     ideal = detector.recommend_backend(check_availability=False)

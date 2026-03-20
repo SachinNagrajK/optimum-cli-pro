@@ -1,5 +1,6 @@
 """OpenVINO backend implementation."""
 
+from importlib import util
 from pathlib import Path
 from typing import Any, Dict
 
@@ -42,17 +43,14 @@ class OpenVINOBackend(BaseBackend):
             # Create output directory
             output_path.mkdir(parents=True, exist_ok=True)
             
-            # Check if optimum[openvino] is available
-            try:
-                from optimum.intel.openvino import OVModelForSequenceClassification, OVConfig, OVQuantizer
-            except ImportError:
+            if util.find_spec("optimum.intel.openvino") is None or util.find_spec("openvino") is None:
                 raise OptimizationError(
                     "OpenVINO backend requires 'optimum[openvino]'. "
                     "Install with: pip install optimum[openvino,nncf]"
                 )
             
             # Export to OpenVINO
-            ov_model = self._export_to_openvino(model, task, output_path)
+            self._export_to_openvino(model, task, output_path)
             
             # Save tokenizer if provided
             if tokenizer:
@@ -90,10 +88,7 @@ class OpenVINOBackend(BaseBackend):
             return ov_model
             
         except Exception as e:
-            log.warning(f"OpenVINO export using OVModel failed: {e}")
-            # Fallback
-            model.save_pretrained(output_path)
-            return None
+            raise OptimizationError(f"OpenVINO export failed: {e}")
     
     def _quantize_openvino(self, model: Any, tokenizer: Any, output_path: Path):
         """Quantize model using OpenVINO NNCF."""
@@ -124,7 +119,7 @@ class OpenVINOBackend(BaseBackend):
     def get_requirements(self) -> list:
         """Get required packages."""
         return [
-            "optimum[openvino,nncf]>=1.16.0",
+            "optimum-intel>=1.16.0",
             "openvino>=2023.0.0",
         ]
     

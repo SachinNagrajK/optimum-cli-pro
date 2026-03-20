@@ -37,10 +37,6 @@ class ONNXBackend(BaseBackend):
             Path to optimized model
         """
         try:
-            from optimum.onnxruntime import ORTModelForSequenceClassification, ORTModelForQuestionAnswering
-            from optimum.onnxruntime import ORTOptimizer, ORTQuantizer
-            from optimum.onnxruntime.configuration import OptimizationConfig, AutoQuantizationConfig
-            
             log.info("Converting model to ONNX...")
             
             # Create output directory
@@ -78,7 +74,6 @@ class ONNXBackend(BaseBackend):
             
             # Use generic export
             from optimum.exporters.onnx import main_export
-            from transformers import AutoTokenizer
             
             # Get model name
             model_name = model.config._name_or_path
@@ -99,10 +94,7 @@ class ONNXBackend(BaseBackend):
             return ort_model
             
         except Exception as e:
-            log.warning(f"Advanced ONNX export failed, using basic export: {e}")
-            # Fallback to simple save
-            model.save_pretrained(output_path)
-            return None
+            raise OptimizationError(f"ONNX export failed: {e}")
     
     def _optimize_onnx(self, model: Any, output_path: Path):
         """Apply graph optimizations to ONNX model."""

@@ -1,6 +1,7 @@
 """Base backend interface."""
 
 from abc import ABC, abstractmethod
+from importlib import metadata
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -74,10 +75,16 @@ class BaseBackend(ABC):
             requirements = self.get_requirements()
             for package in requirements:
                 try:
-                    # Extract package name without version specifiers or extras
-                    pkg_name = package.split("[")[0].split(">=")[0].split("==")[0].split(">")[0].split("<")[0].strip()
-                    __import__(pkg_name)
-                except ImportError:
+                    pkg_name = (
+                        package.split("[")[0]
+                        .split(">=")[0]
+                        .split("==")[0]
+                        .split(">")[0]
+                        .split("<")[0]
+                        .strip()
+                    )
+                    metadata.version(pkg_name)
+                except metadata.PackageNotFoundError:
                     log.error(f"Required package not found: {pkg_name} (from {package})")
                     return False
             return True

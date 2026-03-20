@@ -1,6 +1,6 @@
 """Optimum CLI Pro - Production-grade model optimization toolkit."""
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Optimum CLI Pro"
 __license__ = "Apache-2.0"
 

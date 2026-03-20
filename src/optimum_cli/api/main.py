@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from optimum_cli import __version__
-from optimum_cli.api.routes import health, optimize, models, registry
+from optimum_cli.api.routes import health, optimize, models, registry, tracking
 from optimum_cli.utils.logger import log
 
 # Create FastAPI app
@@ -34,6 +34,7 @@ app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(optimize.router, prefix="/api/v1", tags=["optimization"])
 app.include_router(models.router, prefix="/api/v1", tags=["models"])
 app.include_router(registry.router, prefix="/api/v1", tags=["registry"])
+app.include_router(tracking.router, prefix="/api/v1", tags=["tracking"])
 
 # Mount static files
 static_path = Path(__file__).parent / "static"

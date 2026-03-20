@@ -1,12 +1,14 @@
 """Model registry command implementation."""
 
 import asyncio
+import shutil
 from pathlib import Path
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
+from optimum_cli.core.benchmarking import benchmark_model_inference, load_runtime_model
 from optimum_cli.core.registry import ModelRegistry
 
 registry_app = typer.Typer(help="Model registry commands")
@@ -66,7 +68,7 @@ def push_model(
             console.print(f"[red]✗[/red] Model path not found: {path}")
             raise typer.Exit(1)
         
-        console.print(f"\n[bold cyan]📤 Registering model[/bold cyan]\n")
+        console.print("\n[bold cyan]📤 Registering model[/bold cyan]\n")
         console.print(f"Name: [cyan]{name}[/cyan]")
         console.print(f"Version: [yellow]{version}[/yellow]")
         console.print(f"Backend: [green]{backend}[/green]")
@@ -84,7 +86,7 @@ def push_model(
                 task=task,
             )
         
-        console.print(f"\n[green]✓[/green] Model registered successfully!")
+        console.print("\n[green]✓[/green] Model registered successfully!")
         console.print(f"[dim]Model ID: {model_id}[/dim]\n")
     
     asyncio.run(_push())
@@ -97,26 +99,82 @@ def pull_model(
     output: str = typer.Option("./", "--output", "-o", help="Output directory"),
 ):
     """Pull a model from the registry."""
-    console.print(f"\n[bold cyan]📥 Pulling model from registry[/bold cyan]\n")
-    console.print(f"Name: {name}")
-    console.print(f"Version: {version}")
-    console.print(f"Output: {output}\n")
-    console.print("[yellow]Registry pull feature coming soon![/yellow]\n")
+    async def _pull():
+        registry = ModelRegistry()
+        await registry.initialize()
+
+        model = await registry.get_model(name, version)
+        if not model:
+            console.print(f"[red]✗[/red] Model not found: {name}:{version}")
+            raise typer.Exit(1)
+
+        source_path = Path(model["model_path"])
+        if not source_path.exists():
+            console.print(f"[red]✗[/red] Registry artifact path does not exist: {source_path}")
+            raise typer.Exit(1)
+
+        output_root = Path(output)
+        output_root.mkdir(parents=True, exist_ok=True)
+        destination = output_root / model["name"] / model["version"]
+
+        console.print("\n[bold cyan]📥 Pulling model from registry[/bold cyan]\n")
+        console.print(f"Name: [cyan]{model['name']}[/cyan]")
+        console.print(f"Version: [yellow]{model['version']}[/yellow]")
+        console.print(f"Source: {source_path}")
+        console.print(f"Destination: {destination}\n")
+
+        with console.status("[bold green]Copying model artifacts..."):
+            if source_path.is_dir():
+                shutil.copytree(source_path, destination, dirs_exist_ok=True)
+            else:
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source_path, destination)
+
+        console.print("\n[green]✓[/green] Model pulled successfully")
+        console.print(f"[dim]Saved to: {destination}[/dim]\n")
+
+    asyncio.run(_pull())
 
 
 @registry_app.command(name="delete")
 def delete_model(
     name: str = typer.Argument(..., help="Model name"),
     version: str = typer.Option(None, "--version", "-v", help="Model version (deletes all if not specified)"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
 ):
     """Delete a model from the registry."""
-    console.print(f"\n[bold cyan]🗑️  Deleting model from registry[/bold cyan]\n")
-    console.print(f"Name: {name}")
-    if version:
-        console.print(f"Version: {version}")
-    else:
-        console.print("Version: [red]ALL VERSIONS[/red]")
-    console.print("\n[yellow]Registry delete feature coming soon![/yellow]\n")
+    async def _delete():
+        target = f"{name}:{version}" if version else f"{name}:ALL"
+
+        console.print("\n[bold cyan]🗑️  Deleting model from registry[/bold cyan]\n")
+        console.print(f"Target: [yellow]{target}[/yellow]\n")
+
+        if not yes:
+            confirmed = typer.confirm("This operation is destructive. Continue?", default=False)
+            if not confirmed:
+                console.print("\n[yellow]Delete cancelled.[/yellow]\n")
+                raise typer.Exit(0)
+
+        registry = ModelRegistry()
+        await registry.initialize()
+
+        if version:
+            existing = await registry.get_model(name, version)
+            if not existing:
+                console.print(f"[red]✗[/red] Model not found: {name}:{version}")
+                raise typer.Exit(1)
+        else:
+            models = await registry.list_models(name)
+            if not models:
+                console.print(f"[red]✗[/red] No models found for name: {name}")
+                raise typer.Exit(1)
+
+        with console.status("[bold green]Deleting model artifacts and metadata..."):
+            await registry.delete_model(name, version)
+
+        console.print("\n[green]✓[/green] Delete completed successfully\n")
+
+    asyncio.run(_delete())
 
 
 @registry_app.command(name="info")
@@ -134,7 +192,7 @@ def model_info_registry(
             console.print(f"[red]✗[/red] Model not found: {name}:{version}")
             raise typer.Exit(1)
         
-        console.print(f"\n[bold cyan]ℹ️  Model Information[/bold cyan]\n")
+        console.print("\n[bold cyan]ℹ️  Model Information[/bold cyan]\n")
         console.print(f"[cyan]Name:[/cyan] {model['name']}")
         console.print(f"[yellow]Version:[/yellow] {model['version']}")
         console.print(f"[green]Backend:[/green] {model['backend']}")
@@ -179,14 +237,14 @@ def create_ab_test(
             console.print(f"[red]✗[/red] Model B not found: {model_b}")
             raise typer.Exit(1)
         
-        console.print(f"\n[bold cyan]🔬 Creating A/B Test[/bold cyan]\n")
+        console.print("\n[bold cyan]🔬 Creating A/B Test[/bold cyan]\n")
         console.print(f"Test Name: [cyan]{name}[/cyan]")
         console.print(f"Model A: [yellow]{model_a_data['name']}:{model_a_data['version']}[/yellow] ({model_a_data['backend']})")
         console.print(f"Model B: [yellow]{model_b_data['name']}:{model_b_data['version']}[/yellow] ({model_b_data['backend']})")
         
         test_id = await registry.create_ab_test(name, model_a_data["id"], model_b_data["id"])
         
-        console.print(f"\n[green]✓[/green] A/B test created successfully!")
+        console.print("\n[green]✓[/green] A/B test created successfully!")
         console.print(f"[dim]Test ID: {test_id}[/dim]")
         console.print(f"\n[dim]Run: optimum-pro registry ab-compare {name}[/dim]\n")
     
@@ -199,6 +257,9 @@ def compare_ab_test(
     input_text: str = typer.Option(
         "The capital of France is [MASK].", "--input", "-i", help="Input text for comparison"
     ),
+    runs: int = typer.Option(30, "--runs", "-r", help="Number of benchmark runs"),
+    batch_size: int = typer.Option(1, "--batch-size", help="Batch size for inference benchmarking"),
+    device: str = typer.Option("auto", "--device", help="Execution device: auto, cpu, gpu"),
 ):
     """Compare models in an A/B test."""
     async def _compare():
@@ -222,81 +283,52 @@ def compare_ab_test(
         table.add_column(f"Model B\n{test['model_b_name']}:{test['model_b_version']}\n({model_b['backend']})", justify="right")
         table.add_column("Winner", style="bold green")
         
-        # Load and benchmark models
-        import time
-        from optimum.onnxruntime import ORTModelForMaskedLM
-        from optimum.intel import OVModelForMaskedLM
-        from transformers import AutoTokenizer
-        
         console.print("[dim]Loading models...[/dim]")
         
         try:
-            tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-            
-            # Load models based on backend
-            start = time.perf_counter()
-            if model_a["backend"] == "onnx":
-                model_a_loaded = ORTModelForMaskedLM.from_pretrained(model_a["model_path"])
-            elif model_a["backend"] == "openvino":
-                model_a_loaded = OVModelForMaskedLM.from_pretrained(model_a["model_path"])
-            else:
-                console.print(f"[red]✗[/red] Unsupported backend for Model A: {model_a['backend']}")
-                raise typer.Exit(1)
-            load_time_a = time.perf_counter() - start
-            
-            start = time.perf_counter()
-            if model_b["backend"] == "onnx":
-                model_b_loaded = ORTModelForMaskedLM.from_pretrained(model_b["model_path"])
-            elif model_b["backend"] == "openvino":
-                model_b_loaded = OVModelForMaskedLM.from_pretrained(model_b["model_path"])
-            else:
-                console.print(f"[red]✗[/red] Unsupported backend for Model B: {model_b['backend']}")
-                raise typer.Exit(1)
-            load_time_b = time.perf_counter() - start
-            
-            # Prepare inputs
-            inputs = tokenizer(input_text, return_tensors="pt")
-            
-            # Warm-up runs
-            console.print("[dim]Warming up models...[/dim]")
-            for _ in range(3):
-                _ = model_a_loaded(**inputs)
-                _ = model_b_loaded(**inputs)
-            
-            # Inference speed (average of 10 runs)
+            tokenizer_a, model_a_loaded = load_runtime_model(
+                Path(model_a["model_path"]), model_a["backend"], base_model=model_a.get("base_model"), device=device
+            )
+            tokenizer_b, model_b_loaded = load_runtime_model(
+                Path(model_b["model_path"]), model_b["backend"], base_model=model_b.get("base_model"), device=device
+            )
+
             console.print("[dim]Running benchmarks...[/dim]")
-            times_a = []
-            times_b = []
-            for _ in range(10):
-                start = time.perf_counter()
-                _ = model_a_loaded(**inputs)
-                times_a.append(time.perf_counter() - start)
-                
-                start = time.perf_counter()
-                _ = model_b_loaded(**inputs)
-                times_b.append(time.perf_counter() - start)
-            
-            inference_a = sum(times_a) / len(times_a)
-            inference_b = sum(times_b) / len(times_b)
+            metrics_a = benchmark_model_inference(
+                model=model_a_loaded,
+                tokenizer=tokenizer_a,
+                input_text=input_text,
+                runs=runs,
+                batch_size=batch_size,
+                device=device,
+            )
+            metrics_b = benchmark_model_inference(
+                model=model_b_loaded,
+                tokenizer=tokenizer_b,
+                input_text=input_text,
+                runs=runs,
+                batch_size=batch_size,
+                device=device,
+            )
             
             # Add metrics to table
             table.add_row(
-                "Load Time (s)",
-                f"{load_time_a:.3f}",
-                f"{load_time_b:.3f}",
-                "[green]A[/green]" if load_time_a < load_time_b else "[yellow]B[/yellow]",
+                "Avg Inference (ms)",
+                f"{metrics_a['mean_latency_s'] * 1000:.3f}",
+                f"{metrics_b['mean_latency_s'] * 1000:.3f}",
+                "[green]A[/green]" if metrics_a["mean_latency_s"] < metrics_b["mean_latency_s"] else "[yellow]B[/yellow]",
             )
             table.add_row(
-                "Avg Inference (s)",
-                f"{inference_a:.4f}",
-                f"{inference_b:.4f}",
-                "[green]A[/green]" if inference_a < inference_b else "[yellow]B[/yellow]",
+                "P95 Inference (ms)",
+                f"{metrics_a['p95_latency_s'] * 1000:.3f}",
+                f"{metrics_b['p95_latency_s'] * 1000:.3f}",
+                "[green]A[/green]" if metrics_a["p95_latency_s"] < metrics_b["p95_latency_s"] else "[yellow]B[/yellow]",
             )
             table.add_row(
                 "Throughput (req/s)",
-                f"{1/inference_a:.2f}",
-                f"{1/inference_b:.2f}",
-                "[green]A[/green]" if inference_a < inference_b else "[yellow]B[/yellow]",
+                f"{metrics_a['throughput_rps']:.2f}",
+                f"{metrics_b['throughput_rps']:.2f}",
+                "[green]A[/green]" if metrics_a["throughput_rps"] > metrics_b["throughput_rps"] else "[yellow]B[/yellow]",
             )
             table.add_row(
                 "Model Size (MB)",
@@ -310,16 +342,20 @@ def compare_ab_test(
             console.print()
             
             # Calculate speedup
-            speedup = inference_b / inference_a if inference_a < inference_b else inference_a / inference_b
-            winner = "Model A" if inference_a < inference_b else "Model B"
+            latency_a = metrics_a["mean_latency_s"]
+            latency_b = metrics_b["mean_latency_s"]
+            speedup = latency_b / latency_a if latency_a < latency_b else latency_a / latency_b
+            winner = "Model A" if latency_a < latency_b else "Model B"
             console.print(f"[bold green]Winner:[/bold green] {winner}")
             console.print(f"[bold]Speedup:[/bold] {speedup:.2f}x faster\n")
             
             # Record results
-            await registry.record_ab_result(test["id"], model_a["id"], "load_time", load_time_a)
-            await registry.record_ab_result(test["id"], model_b["id"], "load_time", load_time_b)
-            await registry.record_ab_result(test["id"], model_a["id"], "inference_time", inference_a)
-            await registry.record_ab_result(test["id"], model_b["id"], "inference_time", inference_b)
+            await registry.record_ab_result(test["id"], model_a["id"], "mean_latency_s", metrics_a["mean_latency_s"])
+            await registry.record_ab_result(test["id"], model_b["id"], "mean_latency_s", metrics_b["mean_latency_s"])
+            await registry.record_ab_result(test["id"], model_a["id"], "p95_latency_s", metrics_a["p95_latency_s"])
+            await registry.record_ab_result(test["id"], model_b["id"], "p95_latency_s", metrics_b["p95_latency_s"])
+            await registry.record_ab_result(test["id"], model_a["id"], "throughput_rps", metrics_a["throughput_rps"])
+            await registry.record_ab_result(test["id"], model_b["id"], "throughput_rps", metrics_b["throughput_rps"])
             
             console.print("[green]✓[/green] Results recorded to registry\n")
             

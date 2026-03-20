@@ -1,10 +1,7 @@
 """Tests for backend manager."""
 
-import pytest
 from optimum_cli.core.backend_manager import BackendManager
-from optimum_cli.backends.bettertransformer import BetterTransformerBackend
 from optimum_cli.backends.onnx import ONNXBackend
-from optimum_cli.backends.openvino import OpenVINOBackend
 
 
 def test_backend_manager_initialization():

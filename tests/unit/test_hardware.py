@@ -1,6 +1,5 @@
 """Tests for hardware detection."""
 
-import pytest
 from optimum_cli.utils.hardware import HardwareDetector
 
 

@@ -525,6 +525,60 @@ body {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Tracking */
+.tracking-panel {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    border: 2px solid #e2e8f0;
+}
+
+.tracking-table-wrapper {
+    overflow-x: auto;
+}
+
+.tracking-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.tracking-table th,
+.tracking-table td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+}
+
+.tracking-table th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 700;
+}
+
+.tracking-table tr:hover {
+    background: #f8fafc;
+}
+
+.tracking-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.status-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
 /* Loading */
 .loading {
     text-align: center;

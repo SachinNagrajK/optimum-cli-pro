@@ -32,6 +32,9 @@
             <button class="tab-btn" data-tab="ab-testing">
                 <i class="fas fa-flask"></i> A/B Testing
             </button>
+            <button class="tab-btn" data-tab="tracking">
+                <i class="fas fa-chart-line"></i> Tracking
+            </button>
         </nav>
 
         <!-- Main Content -->
@@ -121,6 +124,23 @@
                     </div>
 
                     <div id="comparisonResults" class="comparison-results"></div>
+                </div>
+            </section>
+
+            <!-- Tracking Tab -->
+            <section class="tab-content" id="tracking-tab">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-line"></i> Optimization Tracking</h2>
+                    <button class="btn btn-primary" onclick="loadTrackingRuns()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <div class="tracking-panel" id="trackingPanel">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading tracking history...</p>
+                    </div>
                 </div>
             </section>
         </main>

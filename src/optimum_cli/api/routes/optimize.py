@@ -1,7 +1,7 @@
 """Optimization routes."""
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks
-from optimum_cli.api.schemas import OptimizeRequest, OptimizeResponse, ErrorResponse
+from optimum_cli.api.schemas import OptimizeRequest, OptimizeResponse
 from optimum_cli.core.optimizer import get_optimizer
 from optimum_cli.utils.logger import log
 
@@ -28,7 +28,11 @@ async def optimize_model(request: OptimizeRequest):
             task=request.task,
             batch_size=request.batch_size,
             sequence_length=request.sequence_length,
+            device=request.device,
             quantization=request.quantization,
+            track_mlflow=request.track_mlflow,
+            track_wandb=request.track_wandb,
+            tracking_source="api-sync",
         )
         
         return OptimizeResponse(
@@ -74,7 +78,11 @@ async def optimize_model_async(
                 task=request.task,
                 batch_size=request.batch_size,
                 sequence_length=request.sequence_length,
+                device=request.device,
                 quantization=request.quantization,
+                track_mlflow=request.track_mlflow,
+                track_wandb=request.track_wandb,
+                tracking_source="api-async",
             )
         except Exception as e:
             log.error(f"Async optimization failed: {e}")

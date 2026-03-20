@@ -34,9 +34,23 @@ class BackendManager:
     def _register_backends(self):
         """Register all available backends."""
         # Get backend configs
-        bt_config = self.config.get("bettertransformer", {})
-        onnx_config = self.config.get("onnx", {}).get("settings", {})
-        ov_config = self.config.get("openvino", {}).get("settings", {})
+        bt_config = self.config.get("bettertransformer", {}).get("settings", {})
+        onnx_raw = self.config.get("onnx", {}).get("settings", {})
+        ov_raw = self.config.get("openvino", {}).get("settings", {})
+
+        onnx_config = {
+            **onnx_raw,
+            "optimization_enabled": onnx_raw.get("graph_optimization", {}).get("enabled", True),
+            "quantization_enabled": onnx_raw.get("quantization", {}).get("enabled", True),
+            "per_channel": onnx_raw.get("quantization", {}).get("per_channel", True),
+            "reduce_range": onnx_raw.get("quantization", {}).get("reduce_range", False),
+        }
+
+        ov_config = {
+            **ov_raw,
+            "quantization_enabled": ov_raw.get("quantization", {}).get("enabled", True),
+            "preset": ov_raw.get("quantization", {}).get("preset", "mixed"),
+        }
         
         # Register backends
         self.backends["bettertransformer"] = BetterTransformerBackend(bt_config)
