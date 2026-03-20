@@ -2,7 +2,7 @@
 
 __version__ = "1.0.1"
 __author__ = "Optimum CLI Pro"
-__license__ = "Apache-2.0"
+__license__ = "MIT"
 
 from optimum_cli.core.optimizer import ModelOptimizer
 from optimum_cli.core.backend_manager import BackendManager
