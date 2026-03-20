@@ -1728,10 +1728,9 @@ If you find this project useful, please consider giving it a star on GitHub! ⭐
 
 ## 📞 Contact
 
-- **Author**: Your Name
-- **Email**: your.email@example.com
-- **GitHub**: @yourusername
-- **Twitter**: @yourhandle
+- **Author**: Sachin Nagraj Kulkarni
+- **Email**: sachinnagrajkulkarni@gmail.com
+- **GitHub**: SachinNagrajK
 
 ---
 
