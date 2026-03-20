@@ -72,7 +72,7 @@ Congratulations! Your **production-grade Optimum CLI Pro** toolkit is fully impl
 - ✅ Requirements files
 - ✅ .gitignore
 - ✅ .env.example
-- ✅ Apache 2.0 License
+- ✅ MIT License
 - ✅ setup.py for compatibility
 
 ---
