@@ -13,8 +13,27 @@ from optimum_cli.cli.tracking import tracking_app
 
 # Create main app
 app = typer.Typer(
-    name="optimum-cli",
-    help="🚀 Production-grade CLI tool for optimizing HuggingFace models",
+    name="optimum-pro",
+    help=(
+        "🚀 Production-grade CLI for optimizing, benchmarking, serving, and tracking Hugging Face models.\n\n"
+        "Command Groups\n"
+        "  optimize   Optimize models, inspect model metadata, and list optimized artifacts\n"
+        "  benchmark  Benchmark optimized artifacts and compare optimized vs baseline models\n"
+        "  registry   Register, pull, inspect, delete, and A/B test optimized models\n"
+        "  serve      Start the FastAPI server for model serving and web UI\n"
+        "  tracking   View local optimization run history and tracking log location\n\n"
+        "Top-Level Commands\n"
+        "  version        Show installed CLI version\n"
+        "  info           Show system hardware and backend readiness\n"
+        "  list-backends  Show backend availability and requirements\n\n"
+        "Quick Examples\n"
+        "  optimum-pro optimize model bert-base-uncased --backend onnx --quantization\n"
+        "  optimum-pro benchmark model bert-base-uncased --backends onnx,openvino --runs 100\n"
+        "  optimum-pro registry push bert-opt-v1 ./optimized_models/bert-base-uncased --backend onnx\n"
+        "  optimum-pro registry ab-compare backend-comparison --runs 50 --device auto\n"
+        "  optimum-pro serve start --host 0.0.0.0 --port 8000 --workers 2\n"
+        "  optimum-pro tracking list --limit 50 --success true"
+    ),
     add_completion=True,
     rich_markup_mode="rich",
 )
@@ -23,22 +42,33 @@ app = typer.Typer(
 console = Console()
 
 # Add sub-commands
-app.add_typer(optimize_app, name="optimize", help="Optimize models")
-app.add_typer(benchmark_app, name="benchmark", help="Benchmark models")
-app.add_typer(registry_app, name="registry", help="Manage model registry")
-app.add_typer(serve_app, name="serve", help="Start API server")
-app.add_typer(tracking_app, name="tracking", help="View optimization tracking history")
+app.add_typer(optimize_app, name="optimize", help="Optimize models and inspect optimization artifacts")
+app.add_typer(benchmark_app, name="benchmark", help="Benchmark optimized models and compare variants")
+app.add_typer(registry_app, name="registry", help="Register, fetch, inspect, and compare stored models")
+app.add_typer(serve_app, name="serve", help="Run the FastAPI serving API and web UI")
+app.add_typer(tracking_app, name="tracking", help="Inspect local optimization tracking history")
 
 
 @app.command()
 def version():
-    """Show version information."""
+    """Show installed CLI version.
+
+    Example:
+        optimum-pro version
+    """
     console.print(f"[bold green]Optimum CLI Pro[/bold green] version [bold]{__version__}[/bold]")
 
 
 @app.command()
 def info():
-    """Show system and hardware information."""
+    """Show system hardware details and backend recommendations.
+
+    Includes CPU, memory, GPU detection, backend availability, and recommended
+    backend for your current environment.
+
+    Example:
+        optimum-pro info
+    """
     from optimum_cli.utils.hardware import get_hardware_detector
     from optimum_cli.core.backend_manager import get_backend_manager
     
@@ -111,7 +141,11 @@ def info():
 
 @app.command()
 def list_backends():
-    """List all available optimization backends."""
+    """List optimization backends with readiness status and requirements.
+
+    Example:
+        optimum-pro list-backends
+    """
     from optimum_cli.core.backend_manager import get_backend_manager
     
     console.print("\n[bold cyan]Available Backends:[/bold cyan]\n")

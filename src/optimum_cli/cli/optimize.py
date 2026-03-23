@@ -9,7 +9,15 @@ from typing import Optional
 from optimum_cli.core.optimizer import get_optimizer
 from optimum_cli.utils.logger import log
 
-optimize_app = typer.Typer(help="Model optimization commands")
+optimize_app = typer.Typer(
+    help=(
+        "Optimize model checkpoints with different acceleration backends.\n\n"
+        "Subcommands\n"
+        "  model  Optimize a model and write optimized artifacts\n"
+        "  info   Inspect model metadata without optimization\n"
+        "  list   List local optimized artifacts from ./optimized_models"
+    )
+)
 console = Console()
 
 
@@ -19,56 +27,64 @@ def optimize_model(
     backend: str = typer.Option(
         "auto",
         "--backend", "-b",
-        help="Backend to use: auto, onnx, openvino, bettertransformer"
+        help="Optimization backend. Allowed values: auto, onnx, openvino, bettertransformer"
     ),
     output: str = typer.Option(
         "./optimized_models",
         "--output", "-o",
-        help="Output directory for optimized model"
+        help="Directory where optimized model artifacts are written"
     ),
     task: Optional[str] = typer.Option(
         None,
         "--task", "-t",
-        help="Task type (auto-detected if not specified)"
+        help="Task override (auto-detected when omitted), e.g. fill-mask, text-classification"
     ),
     batch_size: Optional[int] = typer.Option(
         None,
         "--batch-size",
-        help="Batch size for optimization"
+        help="Batch size used during optimization and calibration flows"
     ),
     sequence_length: Optional[int] = typer.Option(
         None,
         "--sequence-length",
-        help="Sequence length for optimization"
+        help="Maximum sequence length used for optimization-related processing"
     ),
     device: str = typer.Option(
         "auto",
         "--device",
-        help="Execution device: auto, cpu, gpu"
+        help="Execution device. Allowed values: auto, cpu, gpu"
     ),
     quantization: bool = typer.Option(
         True,
         "--quantization/--no-quantization",
-        help="Enable or disable quantization"
+        help="Toggle quantization on or off"
     ),
     track_mlflow: bool = typer.Option(
         False,
         "--track-mlflow",
-        help="Track optimization with MLflow"
+        help="Track optimization run in MLflow"
     ),
     track_wandb: bool = typer.Option(
         False,
         "--track-wandb",
-        help="Track optimization with Weights & Biases"
+        help="Track optimization run in Weights & Biases"
     ),
 ):
-    """
-    Optimize a HuggingFace model.
-    
-    Examples:
-        optimum-cli optimize model bert-base-uncased --backend onnx
-        optimum-cli optimize model distilbert-base-uncased --backend auto
-        optimum-cli optimize model roberta-base --backend openvino --quantization
+    """Optimize a Hugging Face model checkpoint.
+
+    Common Variations:
+      - Auto backend selection:
+          optimum-pro optimize model bert-base-uncased --backend auto
+      - Explicit backend + output location:
+          optimum-pro optimize model bert-base-uncased --backend onnx --output ./optimized_models
+      - Disable quantization:
+          optimum-pro optimize model roberta-base --backend onnx --no-quantization
+      - Force GPU (if available):
+          optimum-pro optimize model bert-base-uncased --backend bettertransformer --device gpu
+      - Override task and tensor settings:
+          optimum-pro optimize model gpt2 --task text-generation --batch-size 4 --sequence-length 256
+      - Enable experiment tracking:
+          optimum-pro optimize model bert-base-uncased --track-mlflow --track-wandb
     """
     try:
         console.print(f"\n[bold cyan]🚀 Optimizing model:[/bold cyan] {model_id}")
@@ -128,7 +144,11 @@ def optimize_model(
 def model_info(
     model_id: str = typer.Argument(..., help="HuggingFace model ID"),
 ):
-    """Get information about a model without optimizing it."""
+    """Inspect model metadata without running optimization.
+
+    Example:
+        optimum-pro optimize info bert-base-uncased
+    """
     try:
         console.print(f"\n[bold cyan]📋 Model Information:[/bold cyan] {model_id}\n")
         
@@ -159,7 +179,11 @@ def model_info(
 
 @optimize_app.command(name="list")
 def list_optimized():
-    """List all optimized models in the output directory."""
+    """List optimized model artifacts discovered under ./optimized_models.
+
+    Example:
+        optimum-pro optimize list
+    """
     output_dir = Path("./optimized_models")
     
     if not output_dir.exists():

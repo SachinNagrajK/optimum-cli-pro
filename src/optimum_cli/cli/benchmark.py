@@ -16,7 +16,14 @@ from optimum_cli.core.benchmarking import (
 )
 from optimum_cli.utils.exceptions import BenchmarkError
 
-benchmark_app = typer.Typer(help="Benchmarking commands")
+benchmark_app = typer.Typer(
+    help=(
+        "Benchmark optimized artifacts and compare optimized vs baseline models.\n\n"
+        "Subcommands\n"
+        "  model    Benchmark one or more optimized artifacts\n"
+        "  compare  Compare two models (optimized or baseline Hugging Face model IDs)"
+    )
+)
 console = Console()
 
 
@@ -26,40 +33,51 @@ def benchmark_model(
     backends: str = typer.Option(
         "all",
         "--backends", "-b",
-        help="Backends to benchmark (comma-separated or 'all')"
+        help="Backends to benchmark for discovered artifacts: comma-separated list or 'all'"
     ),
     runs: int = typer.Option(
         50,
         "--runs", "-r",
-        help="Number of benchmark runs"
+        help="Number of measured runs per model"
     ),
     batch_size: int = typer.Option(
         1,
         "--batch-size",
-        help="Batch size for benchmarking"
+        help="Inference batch size for each benchmark run"
     ),
     device: str = typer.Option(
         "auto",
         "--device",
-        help="Execution device: auto, cpu, gpu"
+        help="Execution device. Allowed values: auto, cpu, gpu"
     ),
     input_text: str = typer.Option(
         "The capital of France is [MASK].",
         "--input", "-i",
-        help="Input text for inference benchmarking"
+        help="Input text used for each inference run"
     ),
     models_dir: str = typer.Option(
         "./optimized_models",
         "--models-dir",
-        help="Directory containing optimized model artifacts"
+        help="Root directory used to discover optimized artifact folders"
     ),
 ):
-    """
-    Benchmark a model across different backends.
-    
-    Examples:
-        optimum-cli benchmark model bert-base-uncased --backends all
-        optimum-cli benchmark model bert-base-uncased --backends onnx,openvino
+    """Benchmark optimized model artifacts.
+
+    Accepted Inputs:
+      - `model_id` as a direct path to an optimized artifact folder
+      - `model_id` as a Hugging Face model ID/name; artifacts are searched in --models-dir
+
+    Common Variations:
+      - Benchmark all discovered backends:
+          optimum-pro benchmark model bert-base-uncased --backends all
+      - Benchmark selected backends only:
+          optimum-pro benchmark model bert-base-uncased --backends onnx,openvino
+      - Increase statistical confidence:
+          optimum-pro benchmark model bert-base-uncased --runs 200
+      - Use custom input and batch size:
+          optimum-pro benchmark model bert-base-uncased --input "Paris is [MASK]." --batch-size 4
+      - Benchmark a direct optimized path:
+          optimum-pro benchmark model ./optimized_models/bert-base-uncased_onnx
     """
     try:
         model_input_path = Path(model_id)
@@ -186,7 +204,23 @@ def compare_models(
         help="Input text for inference benchmarking"
     ),
 ):
-    """Compare two models side-by-side (optimized artifacts and/or unoptimized HF models)."""
+    """Compare two models side-by-side.
+
+    Accepted Model References:
+      - Optimized artifact directory path
+      - Optimized artifact folder name in --models-dir (e.g., bert-base-uncased_onnx)
+      - Hugging Face baseline model ID (loaded with PyTorch backend)
+
+    Common Variations:
+      - Optimized vs optimized:
+          optimum-pro benchmark compare ./optimized_models/bert-base-uncased_onnx ./optimized_models/bert-base-uncased_openvino
+      - Optimized vs inferred baseline (omit model_b):
+          optimum-pro benchmark compare ./optimized_models/bert-base-uncased_onnx
+      - Baseline vs baseline:
+          optimum-pro benchmark compare bert-base-uncased distilbert-base-uncased
+      - Tune benchmark shape:
+          optimum-pro benchmark compare bert-base-uncased distilbert-base-uncased --runs 100 --batch-size 2 --device auto
+    """
     try:
         root = Path(models_dir)
 
