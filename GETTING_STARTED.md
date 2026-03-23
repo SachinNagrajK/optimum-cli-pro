@@ -126,7 +126,7 @@ optimum-cli optimize list
 ```
 
 **Options:**
-- `--backend, -b`: Backend to use (auto, onnx, openvino, bettertransformer)
+- `--backend, -b`: Backend to use (auto, onnx, openvino)
 - `--output, -o`: Output directory
 - `--task, -t`: Task type
 - `--batch-size`: Batch size
@@ -259,7 +259,6 @@ bash deploy.sh
 |---------|----------|----------|--------|
 | **ONNX Runtime** | Cross-platform | CPU/GPU | ✅ Ready |
 | **OpenVINO** | Intel CPUs | Intel | ✅ Ready |
-| **BetterTransformer** | Quick optimization | CPU/GPU | ✅ Ready |
 
 ## 🔍 Examples
 

@@ -8,7 +8,7 @@ Congratulations! Your **production-grade Optimum CLI Pro** toolkit is fully impl
 
 #### 1. **Core Functionality** ✅
 - ✅ Model optimizer with multiple backend support
-- ✅ Backend manager (ONNX, OpenVINO, BetterTransformer)
+- ✅ Backend manager (ONNX, OpenVINO)
 - ✅ Model loader for HuggingFace models
 - ✅ Hardware detection and auto-backend selection
 - ✅ Configuration management with Pydantic
@@ -36,7 +36,6 @@ Congratulations! Your **production-grade Optimum CLI Pro** toolkit is fully impl
 #### 4. **Backends Implementation** ✅
 - ✅ **ONNX Runtime** - Cross-platform optimization with quantization
 - ✅ **OpenVINO** - Intel CPU/GPU optimization
-- ✅ **BetterTransformer** - PyTorch fast transformers
 - ✅ Abstract base class for extensibility
 - ✅ Auto-detection based on hardware
 
@@ -116,7 +115,7 @@ optimum-cli serve start
 ## 📊 Features Breakdown
 
 ### Implemented ✅
-1. ✅ Model optimization with ONNX, OpenVINO, BetterTransformer
+1. ✅ Model optimization with ONNX and OpenVINO
 2. ✅ CLI tool with Typer
 3. ✅ FastAPI REST API
 4. ✅ Hardware auto-detection
@@ -188,7 +187,7 @@ bash deploy.sh
 
 - **Total Files Created**: 50+
 - **Lines of Code**: ~5,000+
-- **Backends Supported**: 3 (ONNX, OpenVINO, BetterTransformer)
+- **Backends Supported**: 2 (ONNX, OpenVINO)
 - **API Endpoints**: 8+
 - **CLI Commands**: 15+
 - **Test Files**: 4+

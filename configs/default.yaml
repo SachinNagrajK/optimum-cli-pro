@@ -13,7 +13,7 @@ server:
 
 # Optimization defaults
 optimization:
-  default_backend: "auto"  # auto, onnx, openvino, bettertransformer
+  default_backend: "auto"  # auto, onnx, openvino
   batch_size: 1
   sequence_length: 128
   

@@ -20,7 +20,7 @@ presets:
     task: "fill-mask"
     batch_size: 1
     sequence_length: 128
-    recommended_backend: "bettertransformer"
+    recommended_backend: "onnx"
   
   roberta:
     model_id: "roberta-base"
@@ -40,7 +40,7 @@ presets:
     task: "text-generation"
     batch_size: 1
     sequence_length: 128
-    recommended_backend: "bettertransformer"
+    recommended_backend: "onnx"
 
 # Task-specific configurations
 tasks:

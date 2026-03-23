@@ -27,7 +27,7 @@ def optimize_model(
     backend: str = typer.Option(
         "auto",
         "--backend", "-b",
-        help="Optimization backend. Allowed values: auto, onnx, openvino, bettertransformer"
+        help="Optimization backend. Allowed values: auto, onnx, openvino"
     ),
     output: str = typer.Option(
         "./optimized_models",
@@ -79,8 +79,6 @@ def optimize_model(
           optimum-pro optimize model bert-base-uncased --backend onnx --output ./optimized_models
       - Disable quantization:
           optimum-pro optimize model roberta-base --backend onnx --no-quantization
-      - Force GPU (if available):
-          optimum-pro optimize model bert-base-uncased --backend bettertransformer --device gpu
       - Override task and tensor settings:
           optimum-pro optimize model gpt2 --task text-generation --batch-size 4 --sequence-length 256
       - Enable experiment tracking:

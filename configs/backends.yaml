@@ -1,26 +1,5 @@
 # Backend-specific configurations
 
-bettertransformer:
-  name: "BetterTransformer"
-  description: "PyTorch BetterTransformer optimization"
-  requirements:
-    - torch>=1.12.0
-    - optimum>=1.5.0
-  
-  supported_models:
-    - bert
-    - roberta
-    - distilbert
-    - vit
-    - albert
-    - bart
-    - mbart
-    - electra
-  
-  settings:
-    validate_model: true
-    keep_original_model: true
-
 onnx:
   name: "ONNX Runtime"
   description: "ONNX Runtime with optimization and quantization"
@@ -88,21 +67,16 @@ hardware_priority:
     intel:
       - openvino
       - onnx
-      - bettertransformer
     amd:
       - onnx
-      - bettertransformer
     other:
       - onnx
-      - bettertransformer
   
   gpu:
     nvidia:
-      - bettertransformer
       - onnx
     amd:
       - onnx
-      - bettertransformer
     intel:
       - openvino
       - onnx

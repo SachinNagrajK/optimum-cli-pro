@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from optimum_cli.backends.base import BaseBackend
-from optimum_cli.backends.bettertransformer import BetterTransformerBackend
 from optimum_cli.backends.onnx import ONNXBackend
 from optimum_cli.backends.openvino import OpenVINOBackend
 from optimum_cli.utils.logger import log
@@ -34,7 +33,6 @@ class BackendManager:
     def _register_backends(self):
         """Register all available backends."""
         # Get backend configs
-        bt_config = self.config.get("bettertransformer", {}).get("settings", {})
         onnx_raw = self.config.get("onnx", {}).get("settings", {})
         ov_raw = self.config.get("openvino", {}).get("settings", {})
 
@@ -53,7 +51,6 @@ class BackendManager:
         }
         
         # Register backends
-        self.backends["bettertransformer"] = BetterTransformerBackend(bt_config)
         self.backends["onnx"] = ONNXBackend(onnx_config)
         self.backends["openvino"] = OpenVINOBackend(ov_config)
         
@@ -125,7 +122,7 @@ class BackendManager:
             log.warning(f"Recommended backend '{recommended}' not available: {e}")
         
         # Fallback: try backends in order of preference
-        fallback_order = ["onnx", "bettertransformer", "openvino"]
+        fallback_order = ["onnx", "openvino"]
         
         for name in fallback_order:
             try:
@@ -143,6 +140,32 @@ class BackendManager:
     def list_backends(self) -> List[str]:
         """Get list of available backend names."""
         return list(self.backends.keys())
+
+    def recommend_backends(
+        self,
+        model_config: Optional[Dict[str, Any]] = None,
+        task: Optional[str] = None,
+    ) -> List[str]:
+        """Recommend backend order for a model/task context."""
+        task = (task or "").lower().strip() or None
+        model_type = str((model_config or {}).get("model_type", "")).lower()
+
+        if task in {"text2text-generation", "summarization", "translation"} or model_type in {
+            "bart",
+            "mbart",
+            "t5",
+            "mt5",
+            "pegasus",
+        }:
+            return ["onnx", "openvino"]
+
+        if task in {"text-generation"}:
+            return ["onnx", "openvino"]
+
+        if task in {"fill-mask", "text-classification", "token-classification", "question-answering"}:
+            return ["onnx", "openvino"]
+
+        return ["onnx", "openvino"]
     
     def get_backend_info(self, name: str) -> Dict[str, Any]:
         """

@@ -41,7 +41,7 @@ class ModelOptimizer:
         
         Args:
             model_id: HuggingFace model ID or local path
-            backend: Backend to use (auto, onnx, openvino, bettertransformer)
+            backend: Backend to use (auto, onnx, openvino)
             output_dir: Directory to save optimized model
             task: Optional task type
             batch_size: Batch size for optimization
@@ -53,6 +53,8 @@ class ModelOptimizer:
             Dictionary with optimization results
         """
         start_time = time.time()
+        model_config: Optional[Dict[str, Any]] = None
+        inferred_task: Optional[str] = task
 
         track_mlflow = kwargs.pop("track_mlflow", None)
         track_wandb = kwargs.pop("track_wandb", None)
@@ -75,10 +77,20 @@ class ModelOptimizer:
                 model_id=model_id,
                 task=task
             )
+            model_config = config
             
             # Infer task if not provided
             if task is None:
                 task = self.model_loader._infer_task(config)
+            inferred_task = task
+
+            if task == "unknown":
+                recommendations = self.backend_manager.recommend_backends(model_config=config, task=task)
+                log.warning(
+                    "Could not infer an explicit task from model metadata. "
+                    "Attempting export with backend auto-task detection. "
+                    f"You can set --task manually (recommended backends: {', '.join(recommendations)})."
+                )
             
             # Select backend
             if backend == "auto":
@@ -88,18 +100,14 @@ class ModelOptimizer:
                 backend_instance = self.backend_manager.get_backend(backend)
                 backend_name = backend
 
-            requested_device = str(device).lower().strip()
-            if requested_device in {"auto", "gpu"} and backend_name == "bettertransformer":
-                try:
-                    import torch
+            recommendations = self.backend_manager.recommend_backends(model_config=config, task=task)
+            if backend != "auto" and backend_name not in recommendations:
+                log.warning(
+                    f"Backend '{backend_name}' may be suboptimal for task '{task}'. "
+                    f"Recommended order: {', '.join(recommendations)}"
+                )
 
-                    if torch.cuda.is_available():
-                        model = model.to("cuda")
-                    elif requested_device == "gpu":
-                        raise OptimizationError("GPU requested but CUDA is not available")
-                except ImportError:
-                    if requested_device == "gpu":
-                        raise OptimizationError("GPU requested but torch is not available")
+            requested_device = str(device).lower().strip()
             
             # Check if model is supported
             if not backend_instance.is_supported(config):
@@ -167,7 +175,15 @@ class ModelOptimizer:
             return result
             
         except Exception as e:
-            log.error(f"Optimization failed: {e}")
+            guidance = ""
+            if model_config is not None:
+                suggestions = self.backend_manager.recommend_backends(model_config=model_config, task=inferred_task)
+                guidance = (
+                    f" Suggested backends for this model/task: {', '.join(suggestions)}."
+                    " If task detection is wrong, rerun with --task <task-name>."
+                )
+
+            log.error(f"Optimization failed: {e}{guidance}")
             try:
                 track_optimization_event(
                     model_id=model_id,
@@ -182,7 +198,7 @@ class ModelOptimizer:
                 )
             except Exception as tracking_error:
                 log.warning(f"Tracking failed after optimization error: {tracking_error}")
-            raise OptimizationError(f"Model optimization failed: {e}")
+            raise OptimizationError(f"Model optimization failed: {e}.{guidance}")
     
     def get_model_info(self, model_id: str) -> Dict[str, Any]:
         """

@@ -8,7 +8,7 @@ class OptimizeRequest(BaseModel):
     """Request schema for model optimization."""
     
     model_id: str = Field(..., description="HuggingFace model ID or local path")
-    backend: str = Field("auto", description="Backend to use: auto, onnx, openvino, bettertransformer")
+    backend: str = Field("auto", description="Backend to use: auto, onnx, openvino")
     output_dir: str = Field("./optimized_models", description="Output directory")
     task: Optional[str] = Field(None, description="Task type (auto-detected if not provided)")
     batch_size: Optional[int] = Field(None, description="Batch size")
