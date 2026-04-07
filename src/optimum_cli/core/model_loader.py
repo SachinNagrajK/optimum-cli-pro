@@ -98,6 +98,10 @@ class ModelLoader:
     
     def _infer_task(self, config: Dict[str, Any]) -> str:
         """Infer task type from model config."""
+        model_type = str(config.get("model_type", "")).lower()
+        if model_type in {"bart", "mbart", "t5", "mt5", "pegasus"}:
+            return "text2text-generation"
+
         # Check architectures field
         architectures = config.get("architectures", [])
         if not architectures:
@@ -114,6 +118,8 @@ class ModelLoader:
             return "token-classification"
         elif "forcausallm" in arch or "forgpt" in arch:
             return "text-generation"
+        elif "forconditionalgeneration" in arch or "forseq2seq" in arch:
+            return "text2text-generation"
         elif "forquestionanswering" in arch:
             return "question-answering"
         

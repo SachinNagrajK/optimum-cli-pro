@@ -2,7 +2,7 @@
 
 from importlib import util
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from optimum_cli.backends.base import BaseBackend
 from optimum_cli.utils.logger import log
@@ -11,6 +11,17 @@ from optimum_cli.utils.exceptions import OptimizationError
 
 class OpenVINOBackend(BaseBackend):
     """Intel OpenVINO optimization backend."""
+
+    TASK_TO_OV_CLASS = {
+        "fill-mask": "OVModelForMaskedLM",
+        "text-classification": "OVModelForSequenceClassification",
+        "token-classification": "OVModelForTokenClassification",
+        "question-answering": "OVModelForQuestionAnswering",
+        "text-generation": "OVModelForCausalLM",
+        "text2text-generation": "OVModelForSeq2SeqLM",
+        "summarization": "OVModelForSeq2SeqLM",
+        "translation": "OVModelForSeq2SeqLM",
+    }
     
     def __init__(self, config: Dict[str, Any] = None):
         super().__init__(config)
@@ -49,8 +60,12 @@ class OpenVINOBackend(BaseBackend):
                     "Install with: pip install optimum[openvino,nncf]"
                 )
             
+            resolved_task = self._resolve_task(model, task)
+            if task and resolved_task != task:
+                log.info(f"Resolved task '{task}' to '{resolved_task}' for OpenVINO export")
+
             # Export to OpenVINO
-            self._export_to_openvino(model, task, output_path)
+            self._export_to_openvino(model, resolved_task, output_path)
             
             # Save tokenizer if provided
             if tokenizer:
@@ -68,19 +83,27 @@ class OpenVINOBackend(BaseBackend):
             log.error(f"OpenVINO optimization failed: {e}")
             raise OptimizationError(f"OpenVINO optimization failed: {e}")
     
-    def _export_to_openvino(self, model: Any, task: str, output_path: Path) -> Any:
+    def _export_to_openvino(self, model: Any, task: Optional[str], output_path: Path) -> Any:
         """Export model to OpenVINO format."""
         try:
-            from optimum.intel.openvino import OVModelForSequenceClassification
-            
+            import optimum.intel.openvino as ov_module
+
             # Get model name
             model_name = model.config._name_or_path
-            
-            # Load and export using OVModel
-            ov_model = OVModelForSequenceClassification.from_pretrained(
-                model_name,
-                export=True
-            )
+
+            class_name = self.TASK_TO_OV_CLASS.get(task or "")
+            if not class_name:
+                class_name = "OVModelForSequenceClassification"
+
+            model_cls = getattr(ov_module, class_name, None)
+            if model_cls is None:
+                raise OptimizationError(
+                    f"No OpenVINO model class available for task '{task}'. "
+                    "Try --task text-classification, text-generation, or text2text-generation."
+                )
+
+            # Load and export using task-compatible OVModel
+            ov_model = model_cls.from_pretrained(model_name, export=True)
             
             # Save to output path
             ov_model.save_pretrained(output_path)
@@ -89,6 +112,28 @@ class OpenVINOBackend(BaseBackend):
             
         except Exception as e:
             raise OptimizationError(f"OpenVINO export failed: {e}")
+
+    def _resolve_task(self, model: Any, task: Optional[str]) -> Optional[str]:
+        """Resolve task hint into an OpenVINO-friendly task string."""
+        if task and task != "unknown":
+            return task
+
+        model_type = str(getattr(model.config, "model_type", "")).lower()
+        architectures = [arch.lower() for arch in getattr(model.config, "architectures", [])]
+        arch_blob = " ".join(architectures)
+
+        if model_type in {"bart", "mbart", "t5", "mt5", "pegasus"}:
+            return "text2text-generation"
+        if "forconditionalgeneration" in arch_blob or "forseq2seq" in arch_blob:
+            return "text2text-generation"
+        if "forcausallm" in arch_blob:
+            return "text-generation"
+        if "forsequenceclassification" in arch_blob:
+            return "text-classification"
+        if "formaskedlm" in arch_blob:
+            return "fill-mask"
+
+        return None
     
     def _quantize_openvino(self, model: Any, tokenizer: Any, output_path: Path):
         """Quantize model using OpenVINO NNCF."""

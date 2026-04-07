@@ -285,11 +285,6 @@ body {
     color: #92400e;
 }
 
-.badge-bettertransformer {
-    background: #dcfce7;
-    color: #166534;
-}
-
 .model-actions {
     display: flex;
     gap: 10px;

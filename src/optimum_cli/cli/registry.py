@@ -11,13 +11,33 @@ from rich.table import Table
 from optimum_cli.core.benchmarking import benchmark_model_inference, load_runtime_model
 from optimum_cli.core.registry import ModelRegistry
 
-registry_app = typer.Typer(help="Model registry commands")
+registry_app = typer.Typer(
+    help=(
+        "Manage the local model registry and run A/B comparisons.\n\n"
+        "Subcommands\n"
+        "  list        List registered models (optionally filtered)\n"
+        "  push        Register an optimized model path\n"
+        "  pull        Copy registered artifacts to a local directory\n"
+        "  delete      Remove one version or all versions of a model\n"
+        "  info        Show detailed model metadata\n"
+        "  ab-test     Create an A/B test definition\n"
+        "  ab-compare  Execute benchmark comparison for an A/B test\n"
+        "  ab-list     List A/B tests and status"
+    )
+)
 console = Console()
 
 
 @registry_app.command(name="list")
 def list_models(name: str = typer.Option(None, "--name", "-n", help="Filter by model name")):
-    """List all models in the registry."""
+    """List models currently registered.
+
+    Variations:
+      - List all models:
+          optimum-pro registry list
+      - Filter by model name:
+          optimum-pro registry list --name bert-opt-v1
+    """
     async def _list():
         registry = ModelRegistry()
         await registry.initialize()
@@ -61,7 +81,14 @@ def push_model(
     base_model: str = typer.Option(None, "--base-model", help="Original base model name"),
     task: str = typer.Option(None, "--task", help="Model task"),
 ):
-    """Push a model to the registry."""
+    """Register optimized model artifacts in the registry.
+
+    Variations:
+      - Minimal registration:
+          optimum-pro registry push bert-opt-v1 ./optimized_models/bert-base-uncased --backend onnx
+      - Explicit version + metadata:
+          optimum-pro registry push bert-opt-v1 ./optimized_models/bert-base-uncased --backend onnx --version 1.0.2 --base-model bert-base-uncased --task fill-mask
+    """
     async def _push():
         model_path = Path(path)
         if not model_path.exists():
@@ -98,7 +125,16 @@ def pull_model(
     version: str = typer.Option("latest", "--version", "-v", help="Model version"),
     output: str = typer.Option("./", "--output", "-o", help="Output directory"),
 ):
-    """Pull a model from the registry."""
+    """Copy a registered model from registry storage to local path.
+
+    Variations:
+      - Pull latest version:
+          optimum-pro registry pull bert-opt-v1
+      - Pull specific version:
+          optimum-pro registry pull bert-opt-v1 --version 1.0.0
+      - Pull to custom directory:
+          optimum-pro registry pull bert-opt-v1 --output ./exports
+    """
     async def _pull():
         registry = ModelRegistry()
         await registry.initialize()
@@ -142,7 +178,16 @@ def delete_model(
     version: str = typer.Option(None, "--version", "-v", help="Model version (deletes all if not specified)"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
 ):
-    """Delete a model from the registry."""
+    """Delete one or more model versions from the registry.
+
+    Variations:
+      - Delete a specific version:
+          optimum-pro registry delete bert-opt-v1 --version 1.0.0
+      - Delete all versions for a model name:
+          optimum-pro registry delete bert-opt-v1
+      - Skip confirmation prompt:
+          optimum-pro registry delete bert-opt-v1 --version 1.0.0 --yes
+    """
     async def _delete():
         target = f"{name}:{version}" if version else f"{name}:ALL"
 
@@ -182,7 +227,14 @@ def model_info_registry(
     name: str = typer.Argument(..., help="Model name"),
     version: str = typer.Option("latest", "--version", "-v", help="Model version"),
 ):
-    """Show detailed information about a registered model."""
+    """Show detailed metadata for a registered model.
+
+    Variations:
+      - Show latest version info:
+          optimum-pro registry info bert-opt-v1
+      - Show specific version info:
+          optimum-pro registry info bert-opt-v1 --version 1.0.0
+    """
     async def _info():
         registry = ModelRegistry()
         await registry.initialize()
@@ -212,7 +264,14 @@ def create_ab_test(
     model_a: str = typer.Argument(..., help="Model A (format: name:version or name)"),
     model_b: str = typer.Argument(..., help="Model B (format: name:version or name)"),
 ):
-    """Create an A/B test between two models."""
+    """Create an A/B test configuration from two registered models.
+
+    Variations:
+      - Use latest versions:
+          optimum-pro registry ab-test backend-comparison bert-opt-onnx bert-opt-openvino
+      - Pin specific versions:
+          optimum-pro registry ab-test backend-comparison bert-opt-onnx:1.0.0 bert-opt-openvino:1.0.0
+    """
     async def _create_test():
         # Parse model names
         ma_parts = model_a.split(":")
@@ -261,7 +320,16 @@ def compare_ab_test(
     batch_size: int = typer.Option(1, "--batch-size", help="Batch size for inference benchmarking"),
     device: str = typer.Option("auto", "--device", help="Execution device: auto, cpu, gpu"),
 ):
-    """Compare models in an A/B test."""
+    """Run benchmark comparison for a predefined A/B test.
+
+    Variations:
+      - Run default comparison:
+          optimum-pro registry ab-compare backend-comparison
+      - Custom input and run count:
+          optimum-pro registry ab-compare backend-comparison --input "Paris is [MASK]." --runs 100
+      - Tune execution setup:
+          optimum-pro registry ab-compare backend-comparison --batch-size 2 --device auto
+    """
     async def _compare():
         registry = ModelRegistry()
         await registry.initialize()
@@ -370,7 +438,11 @@ def compare_ab_test(
 
 @registry_app.command(name="ab-list")
 def list_ab_tests():
-    """List all A/B tests."""
+    """List all A/B test definitions and status.
+
+    Example:
+        optimum-pro registry ab-list
+    """
     async def _list():
         registry = ModelRegistry()
         await registry.initialize()

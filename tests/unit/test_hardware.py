@@ -43,4 +43,4 @@ def test_recommend_backend():
     detector = HardwareDetector()
     backend = detector.recommend_backend()
     
-    assert backend in ["onnx", "openvino", "bettertransformer"]
+    assert backend in ["onnx", "openvino"]

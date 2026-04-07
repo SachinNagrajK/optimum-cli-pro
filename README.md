@@ -33,7 +33,7 @@ A comprehensive solution for model optimization, benchmarking, registry manageme
 ## ✨ Features
 
 ### 🎯 **Model Optimization**
-- **4 Acceleration Backends**: ONNX Runtime, OpenVINO, BetterTransformer, Auto-detection
+- **3 Backend Options**: ONNX Runtime, OpenVINO, Auto-detection
 - **Automatic Task Detection**: Infers task type from model architecture
 - **Quantization Support**: INT8 quantization for 2-4x size reduction
 - **Custom Optimization**: Configure batch size, sequence length, and more
@@ -352,7 +352,7 @@ optimum-pro optimize model <MODEL_ID> [OPTIONS]
 
 | Option | Short | Type | Default | Description |
 |--------|-------|------|---------|-------------|
-| `--backend` | `-b` | choice | `auto` | Backend to use: `auto`, `onnx`, `openvino`, `bettertransformer` |
+| `--backend` | `-b` | choice | `auto` | Backend to use: `auto`, `onnx`, `openvino` |
 | `--output` | `-o` | path | `./optimized_models` | Output directory for optimized model |
 | `--task` | `-t` | str | auto-detect | Task type (see [Supported Tasks](#-supported-tasks)) |
 | `--batch-size` | | int | 1 | Batch size for optimization |
@@ -369,7 +369,6 @@ optimum-pro optimize model <MODEL_ID> [OPTIONS]
 | **auto** | Automatic selection | - | - | Detects best backend for your hardware |
 | **onnx** | Cross-platform deployment | ⚡⚡⚡ Fast | 📦 Medium | Works everywhere (CPU/GPU) |
 | **openvino** | Intel CPUs | ⚡⚡⚡⚡ Fastest | 📦📦 Small | Intel CPUs only |
-| **bettertransformer** | Native PyTorch | ⚡⚡ Medium | 📦📦📦 Large | PyTorch environments |
 
 #### Examples
 
@@ -426,7 +425,7 @@ optimum-pro registry push [OPTIONS]
 |--------|-------|------|----------|-------------|
 | `--name` | `-n` | str | ✅ | Unique model name |
 | `--path` | `-p` | path | ✅ | Path to optimized model directory |
-| `--backend` | `-b` | str | ✅ | Backend used: `onnx`, `openvino`, `bettertransformer` |
+| `--backend` | `-b` | str | ✅ | Backend used: `onnx`, `openvino` |
 | `--version` | `-v` | str | | Model version (default: `1.0.0`) |
 | `--description` | `-d` | str | | Model description |
 | `--tags` | `-t` | str | | Comma-separated tags |
@@ -762,8 +761,6 @@ optimization:
     openvino:
       enabled: true
       device: "CPU"
-    bettertransformer:
-      enabled: true
 
 mlops:
   mlflow:
@@ -1223,8 +1220,7 @@ optimum-cli-pro/
 │       │   ├── __init__.py
 │       │   ├── base.py              # Abstract base backend
 │       │   ├── onnx_backend.py      # ONNX Runtime backend
-│       │   ├── openvino_backend.py  # OpenVINO backend
-│       │   └── better_transformer.py # BetterTransformer backend
+│       │   └── openvino_backend.py  # OpenVINO backend
 │       └── api/
 │           ├── __init__.py
 │           ├── main.py              # FastAPI app
@@ -1266,7 +1262,6 @@ optimum-cli-pro/
 - **Optimization Backends**:
   - ONNX Runtime (`optimum[onnxruntime]`)
   - OpenVINO (`optimum-intel`)
-  - BetterTransformer (native PyTorch)
 - **Frontend**: Vanilla JavaScript + CSS (no frameworks)
 - **Configuration**: Pydantic v2 settings management
 - **Logging**: Python logging with rich formatting

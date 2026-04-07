@@ -166,10 +166,10 @@ class HardwareDetector:
         # Determine ideal backend based on hardware
         ideal_backend = None
         
-        # GPU available - prefer BetterTransformer
+        # GPU available - prefer ONNX
         if hardware["gpu"]["available"]:
-            ideal_backend = "bettertransformer"
-            log.info("GPU detected, ideal backend: BetterTransformer")
+            ideal_backend = "onnx"
+            log.info("GPU detected, ideal backend: ONNX Runtime")
         # Intel CPU - prefer OpenVINO
         elif hardware["cpu"].get("vendor", "unknown") == "intel":
             ideal_backend = "openvino"
@@ -196,7 +196,7 @@ class HardwareDetector:
                 
                 # Fallback: find first available backend
                 log.warning(f"Ideal backend '{ideal_backend}' not available, finding fallback...")
-                for fallback in ["onnx", "bettertransformer", "openvino"]:
+                for fallback in ["onnx", "openvino"]:
                     try:
                         backend = manager.backends.get(fallback)
                         if backend and backend.validate_environment():

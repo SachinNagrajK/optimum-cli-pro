@@ -6,7 +6,14 @@ from rich.table import Table
 
 from optimum_cli.utils.tracking import get_tracking_log_path, read_local_tracking_events
 
-tracking_app = typer.Typer(help="Tracking and run history commands")
+tracking_app = typer.Typer(
+    help=(
+        "Inspect optimization tracking history written to local JSONL logs.\n\n"
+        "Subcommands\n"
+        "  list  Show recent tracking events with optional filters\n"
+        "  path  Show local tracking log file path"
+    )
+)
 console = Console()
 
 
@@ -20,7 +27,19 @@ def list_tracking_runs(
         help="Filter by status: all, true, false",
     ),
 ):
-    """List tracked optimization runs."""
+    """List local optimization tracking events.
+
+    Variations:
+      - Show most recent 20 runs:
+          optimum-pro tracking list
+      - Increase list size:
+          optimum-pro tracking list --limit 100
+      - Filter by model:
+          optimum-pro tracking list --model-id bert-base-uncased
+      - Filter by status:
+          optimum-pro tracking list --success true
+          optimum-pro tracking list --success false
+    """
     success_filter = None
     normalized = success.lower().strip()
     if normalized == "true":
@@ -70,5 +89,9 @@ def list_tracking_runs(
 
 @tracking_app.command(name="path")
 def show_tracking_path():
-    """Show local tracking log path."""
+    """Show local JSONL tracking log location.
+
+    Example:
+        optimum-pro tracking path
+    """
     console.print(f"\n[bold]Tracking log file:[/bold] {get_tracking_log_path()}\n")

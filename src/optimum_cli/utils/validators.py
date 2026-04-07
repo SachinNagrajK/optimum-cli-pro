@@ -20,7 +20,7 @@ def validate_model_id(model_id: str) -> bool:
 
 def validate_backend(backend: str) -> bool:
     """Validate backend name."""
-    valid_backends = ["auto", "onnx", "openvino", "bettertransformer"]
+    valid_backends = ["auto", "onnx", "openvino"]
     if backend not in valid_backends:
         raise ValidationError(
             f"Invalid backend: '{backend}'. "

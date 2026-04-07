@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "optimum-cli-pro"
-version = "1.0.1"
+version = "1.0.2"
 description = "Production-grade CLI tool for optimizing HuggingFace models with multiple backends"
 authors = [
     {name = "Optimum CLI Pro", email = "optimum@example.com"}

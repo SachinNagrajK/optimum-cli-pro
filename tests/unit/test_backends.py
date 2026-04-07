@@ -16,7 +16,6 @@ def test_list_backends():
     manager = BackendManager()
     backends = manager.list_backends()
     
-    assert "bettertransformer" in backends
     assert "onnx" in backends
     assert "openvino" in backends
 
@@ -33,5 +32,5 @@ def test_backend_validation(mock_model_config):
     """Test backend model support validation."""
     manager = BackendManager()
     
-    backend = manager.backends["bettertransformer"]
+    backend = manager.backends["onnx"]
     assert backend.is_supported(mock_model_config)

@@ -1,7 +1,7 @@
 """ONNX Runtime backend implementation."""
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from optimum_cli.backends.base import BaseBackend
 from optimum_cli.utils.logger import log
@@ -10,6 +10,17 @@ from optimum_cli.utils.exceptions import OptimizationError
 
 class ONNXBackend(BaseBackend):
     """ONNX Runtime optimization backend."""
+
+    TASK_TO_ORT_CLASS = {
+        "fill-mask": "ORTModelForMaskedLM",
+        "text-classification": "ORTModelForSequenceClassification",
+        "token-classification": "ORTModelForTokenClassification",
+        "question-answering": "ORTModelForQuestionAnswering",
+        "text-generation": "ORTModelForCausalLM",
+        "text2text-generation": "ORTModelForSeq2SeqLM",
+        "summarization": "ORTModelForSeq2SeqLM",
+        "translation": "ORTModelForSeq2SeqLM",
+    }
     
     def __init__(self, config: Dict[str, Any] = None):
         super().__init__(config)
@@ -42,9 +53,14 @@ class ONNXBackend(BaseBackend):
             # Create output directory
             output_path.mkdir(parents=True, exist_ok=True)
             
+            resolved_task = self._resolve_task(model, task)
+            if task and resolved_task != task:
+                log.info(f"Resolved task '{task}' to '{resolved_task}' for ONNX export")
+
             # Export to ONNX
-            # Determine the appropriate ORT model class based on task
-            ort_model = self._export_to_onnx(model, task, output_path)
+            self._export_to_onnx(model, resolved_task, output_path)
+
+            ort_model = self._load_ort_model_for_task(output_path, resolved_task)
             
             # Save tokenizer if provided
             if tokenizer:
@@ -67,11 +83,9 @@ class ONNXBackend(BaseBackend):
             log.error(f"ONNX optimization failed: {e}")
             raise OptimizationError(f"ONNX optimization failed: {e}")
     
-    def _export_to_onnx(self, model: Any, task: str, output_path: Path) -> Any:
+    def _export_to_onnx(self, model: Any, task: Optional[str], output_path: Path) -> None:
         """Export model to ONNX format."""
         try:
-            from optimum.onnxruntime import ORTModelForSequenceClassification
-            
             # Use generic export
             from optimum.exporters.onnx import main_export
             
@@ -84,17 +98,49 @@ class ONNXBackend(BaseBackend):
                 output=output_path,
                 task=task or "auto",
             )
-            
-            # Load the exported model
-            ort_model = ORTModelForSequenceClassification.from_pretrained(
-                output_path,
-                file_name="model.onnx"
-            )
-            
-            return ort_model
-            
+
         except Exception as e:
             raise OptimizationError(f"ONNX export failed: {e}")
+
+    def _load_ort_model_for_task(self, output_path: Path, task: Optional[str]) -> Any:
+        """Try to load exported ONNX artifact with a task-compatible ORT class."""
+        try:
+            import optimum.onnxruntime as ort_module
+
+            class_name = self.TASK_TO_ORT_CLASS.get(task or "")
+            if not class_name:
+                return None
+
+            model_cls = getattr(ort_module, class_name, None)
+            if model_cls is None:
+                return None
+
+            return model_cls.from_pretrained(output_path)
+        except Exception as error:
+            log.warning(f"Could not load ORT model class for task '{task}': {error}")
+            return None
+
+    def _resolve_task(self, model: Any, task: Optional[str]) -> Optional[str]:
+        """Resolve task hint into an exporter-friendly task string."""
+        if task and task != "unknown":
+            return task
+
+        model_type = str(getattr(model.config, "model_type", "")).lower()
+        architectures = [arch.lower() for arch in getattr(model.config, "architectures", [])]
+        arch_blob = " ".join(architectures)
+
+        if model_type in {"bart", "mbart", "t5", "mt5", "pegasus"}:
+            return "text2text-generation"
+        if "forconditionalgeneration" in arch_blob or "forseq2seq" in arch_blob:
+            return "text2text-generation"
+        if "forcausallm" in arch_blob:
+            return "text-generation"
+        if "forsequenceclassification" in arch_blob:
+            return "text-classification"
+        if "formaskedlm" in arch_blob:
+            return "fill-mask"
+
+        return None
     
     def _optimize_onnx(self, model: Any, output_path: Path):
         """Apply graph optimizations to ONNX model."""
